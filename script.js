@@ -15291,6 +15291,8 @@ const dictionary = [
 ];
 
 const WORD_LENGTH = 5;
+
+const alertContainer = document.querySelector("[data-alert-container]");
 const guessGrid = document.querySelector("[data-guess-grid]");
 
 // Figuring out a new target word each day.
@@ -15370,9 +15372,48 @@ function deleteKey() {
 }
 
 function submitGuess() {
-  console.log("submitted");
+  const activeTiles = [...getActiveTiles()];
+
+  if (activeTiles.length !== WORD_LENGTH) {
+    showAlert("Not enought letters!");
+    shakeTiles(activeTiles);
+
+    return;
+  }
+
+  console.log(activeTiles, "submitted");
 }
 
 function getActiveTiles() {
   return guessGrid.querySelectorAll('[data-state="active"]');
+}
+
+function showAlert(message, duration = 1000) {
+  const alert = document.createElement("div");
+  alert.textContent = message;
+  alert.classList.add("alert");
+  alertContainer.prepend(alert);
+
+  if (duration == null) return;
+
+  setTimeout(() => {
+    alert.classList.add("hide");
+
+    alert.addEventListener("transitionend", () => {
+      alert.remove();
+    });
+  }, duration);
+}
+
+function shakeTiles(activeTiles) {
+  activeTiles.forEach((tile) => {
+    tile.classList.add("shake");
+    tile.addEventListener(
+      "animationend",
+      () => {
+        tile.classList.remove("shake");
+      },
+      { once: true }
+    );
+  });
 }
