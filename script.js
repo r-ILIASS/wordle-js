@@ -15293,6 +15293,7 @@ const dictionary = [
 // Settings
 const WORD_LENGTH = 5;
 const FLIP_ANIMATION_DURATION = 500;
+const DANCE_ANIMATION_DURATION = 500;
 
 const alertContainer = document.querySelector("[data-alert-container]");
 const keyboard = document.querySelector("[data-keyboard]");
@@ -15309,8 +15310,6 @@ startInteraction();
 function startInteraction() {
   document.addEventListener("click", handleMouseClick);
   document.addEventListener("keydown", handleKeyPress);
-
-  console.log("Game Started");
 }
 
 function stopInteraction() {
@@ -15380,12 +15379,12 @@ function submitGuess() {
     return;
   }
 
-  // if the word doesn't exist in the dictionary
   const guess = activeTiles.reduce(
     (word, tile) => (word += tile.dataset.letter),
     ""
   );
 
+  // if the word doesn't exist in the dictionary
   if (!dictionary.includes(guess)) {
     showAlert("Not a word");
     shakeTiles(activeTiles);
@@ -15394,7 +15393,7 @@ function submitGuess() {
 
   // if the word exists in the dictionary
   stopInteraction();
-  activeTiles.forEach((...params) => flipTile(...params));
+  activeTiles.forEach((...params) => flipTile(...params, guess));
 }
 
 // flip tiles after submit
@@ -15426,7 +15425,7 @@ function flipTile(tile, index, array, guess) {
           "transitionend",
           () => {
             startInteraction();
-            // Check for win/lose
+            checkWinLose(guess, array);
           },
           { once: true }
         );
@@ -15457,8 +15456,8 @@ function showAlert(message, duration = 1000) {
   }, duration);
 }
 
-function shakeTiles(activeTiles) {
-  activeTiles.forEach((tile) => {
+function shakeTiles(tiles) {
+  tiles.forEach((tile) => {
     tile.classList.add("shake");
     tile.addEventListener(
       "animationend",
@@ -15467,5 +15466,35 @@ function shakeTiles(activeTiles) {
       },
       { once: true }
     );
+  });
+}
+
+function checkWinLose(guess, tiles) {
+  if (guess === targetWord) {
+    showAlert("Hooray! You Win!", 5000);
+    danceTiles(tiles);
+    stopInteraction();
+    return;
+  }
+
+  const remainingTiles = guessGrid.querySelectorAll(":not([data-letter])");
+  if (remainingTiles.length === 0) {
+    showAlert(targetWord.toUpperCase(), null);
+    stopInteraction();
+  }
+}
+
+function danceTiles(tiles) {
+  tiles.forEach((tile, index) => {
+    setTimeout(() => {
+      tile.classList.add("dance");
+      tile.addEventListener(
+        "animationend",
+        () => {
+          tile.classList.remove("shake");
+        },
+        { once: true }
+      );
+    }, (index * DANCE_ANIMATION_DURATION) / 5);
   });
 }
