@@ -15290,9 +15290,12 @@ const dictionary = [
   "shave",
 ];
 
+// Settings
 const WORD_LENGTH = 5;
+const FLIP_ANIMATION_DURATION = 500;
 
 const alertContainer = document.querySelector("[data-alert-container]");
+const keyboard = document.querySelector("[data-keyboard]");
 const guessGrid = document.querySelector("[data-guess-grid]");
 
 // Figuring out a new target word each day.
@@ -15313,8 +15316,6 @@ function startInteraction() {
 function stopInteraction() {
   document.removeEventListener("click", handleMouseClick);
   document.removeEventListener("keydown", handleKeyPress);
-
-  console.log("Game Over");
 }
 
 function handleMouseClick(e) {
@@ -15373,15 +15374,66 @@ function deleteKey() {
 
 function submitGuess() {
   const activeTiles = [...getActiveTiles()];
-
   if (activeTiles.length !== WORD_LENGTH) {
     showAlert("Not enought letters!");
     shakeTiles(activeTiles);
-
     return;
   }
 
-  console.log(activeTiles, "submitted");
+  // if the word doesn't exist in the dictionary
+  const guess = activeTiles.reduce(
+    (word, tile) => (word += tile.dataset.letter),
+    ""
+  );
+
+  if (!dictionary.includes(guess)) {
+    showAlert("Not a word");
+    shakeTiles(activeTiles);
+    return;
+  }
+
+  // if the word exists in the dictionary
+  stopInteraction();
+  activeTiles.forEach((...params) => flipTile(...params));
+}
+
+// flip tiles after submit
+function flipTile(tile, index, array, guess) {
+  const letter = tile.dataset.letter;
+  const key = keyboard.querySelector(`[data-key="${letter.toUpperCase()}"]`);
+  setTimeout(() => {
+    tile.classList.add("flip");
+  }, index * FLIP_ANIMATION_DURATION);
+
+  tile.addEventListener(
+    "transitionend",
+    () => {
+      if (letter === targetWord[index]) {
+        tile.dataset.state = "correct";
+        key.classList.add("correct");
+      } else if (targetWord.includes(letter)) {
+        tile.dataset.state = "wrong-location";
+        key.classList.add("wrong-location");
+      } else {
+        tile.dataset.state = "wrong";
+        key.classList.add("wrong");
+      }
+
+      tile.classList.remove("flip");
+
+      if (index === array.length - 1) {
+        tile.addEventListener(
+          "transitionend",
+          () => {
+            startInteraction();
+            // Check for win/lose
+          },
+          { once: true }
+        );
+      }
+    },
+    { once: true }
+  );
 }
 
 function getActiveTiles() {
